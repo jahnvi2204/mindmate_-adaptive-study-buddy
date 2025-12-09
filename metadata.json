@@ -1,0 +1,5 @@
+{
+  "name": "MindMate: Adaptive Study Buddy",
+  "description": "An AI-powered study companion that adapts to your learning style. Upload notes, generate study plans, take quizzes, and get personalized explanations using the Gemini API.",
+  "requestFramePermissions": []
+}
