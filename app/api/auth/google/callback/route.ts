@@ -17,7 +17,14 @@ const stateCookie = {
   path: "/",
 };
 
-const getBaseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "";
+const getBaseUrl = (req: NextRequest) => {
+  // Use NEXT_PUBLIC_BASE_URL if set, otherwise derive from request URL
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+  const url = new URL(req.url);
+  return `${url.protocol}//${url.host}`;
+};
 
 const decodeIdToken = (idToken: string) => {
   const [, payload] = idToken.split(".");
@@ -35,6 +42,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid state" }, { status: 400 });
   }
 
+  const baseUrl = getBaseUrl(req);
+
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -43,7 +52,7 @@ export async function GET(req: NextRequest) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID ?? "",
         client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-        redirect_uri: `${getBaseUrl()}/api/auth/google/callback`,
+        redirect_uri: `${baseUrl}/api/auth/google/callback`,
         grant_type: "authorization_code",
       }),
     });
@@ -72,7 +81,7 @@ export async function GET(req: NextRequest) {
       { expiresIn: "7d" }
     );
 
-    const res = NextResponse.redirect(getBaseUrl() || "/");
+    const res = NextResponse.redirect(baseUrl || "/");
     res.cookies.set("session", sessionToken, sessionCookie);
     res.cookies.delete("oauth_state");
     return res;

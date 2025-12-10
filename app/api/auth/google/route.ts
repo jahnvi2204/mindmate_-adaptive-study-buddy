@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 const isProd = process.env.NODE_ENV === "production";
@@ -10,14 +10,22 @@ const stateCookie = {
   maxAge: 600,
 };
 
-const getBaseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "";
+const getBaseUrl = (req: NextRequest) => {
+  // Use NEXT_PUBLIC_BASE_URL if set, otherwise derive from request URL
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+  const url = new URL(req.url);
+  return `${url.protocol}//${url.host}`;
+};
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const state = crypto.randomUUID();
+  const baseUrl = getBaseUrl(req);
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID ?? "",
-    redirect_uri: `${getBaseUrl()}/api/auth/google/callback`,
+    redirect_uri: `${baseUrl}/api/auth/google/callback`,
     response_type: "code",
     scope: "openid profile email",
     access_type: "offline",
