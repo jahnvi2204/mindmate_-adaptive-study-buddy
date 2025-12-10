@@ -71,9 +71,10 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
     setIsPdfSource(true);
 
     try {
+      // Use the legacy (non-ESM) build so production minifiers don't choke on the worker.
       const pdfjsLib = await import('pdfjs-dist');
-      const workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
-      // @ts-expect-error pdfjs worker config typing
+      // Use the emitted static worker file (see next.config.js) to avoid bundling/minification issues.
+      const workerSrc = '/_next/static/pdfjs/pdf.worker.min.mjs';
       pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
       const arrayBuffer = await file.arrayBuffer();
