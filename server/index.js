@@ -7,8 +7,8 @@ import jwt from "jsonwebtoken";
 const {
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
-  GOOGLE_REDIRECT_URI = "http://localhost:4000/auth/google/callback",
-  FRONTEND_ORIGIN = "http://localhost:5173",
+  GOOGLE_REDIRECT_URI =process.env.GOOGLE_REDIRECT_URI || "http://localhost:4000/auth/google/callback",
+  FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173",
   APP_SECRET = "change-me",
   PORT = 4000,
 } = process.env;
