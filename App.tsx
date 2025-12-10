@@ -50,7 +50,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogin = () => {
-    window.location.href = '/auth/google';
+    window.location.href = '/api/auth/google';
   };
 
   // Persistence helpers

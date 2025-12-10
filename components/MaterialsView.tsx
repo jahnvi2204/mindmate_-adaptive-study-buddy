@@ -71,22 +71,32 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
     setIsPdfSource(true);
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      // @ts-ignore - pdfjsLib is loaded via CDN in index.html
-      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pdfjsLib = await import('pdfjs-dist');
+      const workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+      // @ts-expect-error pdfjs worker config typing
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      // Allow larger PDFs but cap pages to avoid UI freeze; chunk processing for large files.
+      const maxPages = Math.min(pdf.numPages, 150); // up to 150 pages
       let fullText = '';
-      const maxPages = Math.min(pdf.numPages, 20);
 
       for (let i = 1; i <= maxPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
         fullText += `--- Page ${i} ---\n${pageText}\n\n`;
+
+        // Yield control periodically for very large files
+        if (i % 10 === 0) {
+          await new Promise((r) => setTimeout(r, 0));
+        }
       }
 
-      if (pdf.numPages > 20) {
-        fullText += `\n... (Content truncated at 20 pages for performance) ...`;
+      if (pdf.numPages > maxPages) {
+        fullText += `\n... (Content truncated at ${maxPages} pages for performance) ...`;
       }
 
       setNewContent(fullText);
@@ -95,7 +105,7 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
       }
     } catch (error) {
       console.error('Error parsing PDF:', error);
-      alert('Failed to extract text from the PDF. Please try a simpler file.');
+      alert('Failed to extract text from the PDF. Please try another file or reduce size.');
     } finally {
       setIsParsing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

@@ -10,6 +10,7 @@ import {
   Zap,
   LogOut,
   Brain,
+  Sparkles,
   User,
   Loader2,
 } from 'lucide-react';
@@ -47,12 +48,12 @@ const Layout: React.FC<LayoutProps> = ({ activeTab, onTabChange, children }) => 
   }, []);
 
   const handleLogin = () => {
-    window.location.href = '/auth/google';
+    window.location.href = '/api/auth/google';
   };
 
   const handleLogout = async () => {
     try {
-      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       setUser(null);
     } catch (err) {
       console.error(err);

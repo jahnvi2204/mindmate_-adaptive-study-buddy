@@ -1,12 +1,9 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { LearningStyle, StudyMaterial, StudyPlanDay, QuizQuestion } from "../types";
 
-// Resolve API key from Vite env (dev/build) or process.env as a fallback.
+// Resolve API key from Next env (client-safe key must be prefixed with NEXT_PUBLIC).
 const apiKey =
-  // Vite injects env vars under import.meta.env at build/runtime
-  // We support both plain and VITE_ prefix in case the user chooses either.
-  import.meta.env.GEMINI_API_KEY ??
-  import.meta.env.VITE_GEMINI_API_KEY ??
+  process.env.NEXT_PUBLIC_GEMINI_API_KEY ??
   process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
