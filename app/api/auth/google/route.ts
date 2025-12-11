@@ -4,7 +4,7 @@ import crypto from "crypto";
 const isProd = process.env.NODE_ENV === "production";
 const stateCookie = {
   httpOnly: true,
-  sameSite: "lax" as const,
+  sameSite: "none" as const, // send with OAuth redirect (cross-site)
   secure: isProd,
   path: "/",
   maxAge: 600,

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import {
   Upload,
   FileText,
@@ -74,7 +75,6 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
       // Use the legacy (non-ESM) build so production minifiers don't choke on the worker.
       const pdfjsLib = await import('pdfjs-dist');
       // Use the emitted static worker file (see next.config.js) to avoid bundling/minification issues.
-      const workerSrc = '/_next/static/pdfjs/pdf.worker.min.mjs';
       pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
       const arrayBuffer = await file.arrayBuffer();

@@ -12,7 +12,7 @@ const sessionCookie = {
 
 const stateCookie = {
   httpOnly: true,
-  sameSite: "lax" as const,
+  sameSite: "none" as const, // ensure cookie returns on OAuth redirect
   secure: isProd,
   path: "/",
 };
