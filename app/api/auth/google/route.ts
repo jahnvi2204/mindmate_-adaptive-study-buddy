@@ -11,10 +11,7 @@ const stateCookie = {
 };
 
 const getBaseUrl = (req: NextRequest) => {
-  // Use NEXT_PUBLIC_BASE_URL if set, otherwise derive from request URL
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL;
-  }
+  // Always derive from the incoming request to avoid cross-domain cookie issues.
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 };
