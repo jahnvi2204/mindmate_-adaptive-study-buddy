@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-// Use the legacy worker (non-ESM) and emit it as a static asset to avoid Terser ESM parsing.
-import workerSrc from 'pdfjs-dist/legacy/build/pdf.worker.min.js?url';
+// Use the non-ESM worker and emit it as a static asset to avoid Terser ESM parsing.
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import {
   Upload,
   FileText,
