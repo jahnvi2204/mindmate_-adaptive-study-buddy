@@ -19,13 +19,17 @@ const App: React.FC = () => {
 
   // Load from local storage on mount
   useEffect(() => {
-    const savedMats = localStorage.getItem('mindmate_materials');
-    const savedPlan = localStorage.getItem('mindmate_plan');
-    const savedStyle = localStorage.getItem('mindmate_style');
+    try {
+      const savedMats = localStorage.getItem('mindmate_materials');
+      const savedPlan = localStorage.getItem('mindmate_plan');
+      const savedStyle = localStorage.getItem('mindmate_style');
 
-    if (savedMats) setMaterials(JSON.parse(savedMats));
-    if (savedPlan) setStudyPlan(JSON.parse(savedPlan));
-    if (savedStyle) setLearningStyle(savedStyle as LearningStyle);
+      if (savedMats) setMaterials(JSON.parse(savedMats));
+      if (savedPlan) setStudyPlan(JSON.parse(savedPlan));
+      if (savedStyle) setLearningStyle(savedStyle as LearningStyle);
+    } catch (e) {
+      console.warn('Failed to load from localStorage:', e);
+    }
   }, []);
 
   // Fetch session user
@@ -57,23 +61,39 @@ const App: React.FC = () => {
   const handleAddMaterial = (material: StudyMaterial) => {
     const updated = [...materials, material];
     setMaterials(updated);
-    localStorage.setItem('mindmate_materials', JSON.stringify(updated));
+    try {
+      localStorage.setItem('mindmate_materials', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
   };
 
   const handleRemoveMaterial = (id: string) => {
     const updated = materials.filter(m => m.id !== id);
     setMaterials(updated);
-    localStorage.setItem('mindmate_materials', JSON.stringify(updated));
+    try {
+      localStorage.setItem('mindmate_materials', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
   };
 
   const handleSetPlan = (plan: StudyPlanDay[]) => {
     setStudyPlan(plan);
-    localStorage.setItem('mindmate_plan', JSON.stringify(plan));
+    try {
+      localStorage.setItem('mindmate_plan', JSON.stringify(plan));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
   };
 
   const handleSetStyle = (style: LearningStyle) => {
     setLearningStyle(style);
-    localStorage.setItem('mindmate_style', style);
+    try {
+      localStorage.setItem('mindmate_style', style);
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
   };
 
   // Render View based on Tab

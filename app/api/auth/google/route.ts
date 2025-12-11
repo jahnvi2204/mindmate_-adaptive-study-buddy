@@ -17,11 +17,16 @@ const getBaseUrl = (req: NextRequest) => {
 };
 
 export async function GET(req: NextRequest) {
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    console.error("Missing GOOGLE_CLIENT_ID");
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+
   const state = crypto.randomUUID();
   const baseUrl = getBaseUrl(req);
 
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID ?? "",
+    client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: `${baseUrl}/api/auth/google/callback`,
     response_type: "code",
     scope: "openid profile email",

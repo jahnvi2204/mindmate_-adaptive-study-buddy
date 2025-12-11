@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-// Use the non-ESM worker and emit it as a static asset to avoid Terser ESM parsing.
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import {
   Upload,
   FileText,
@@ -77,8 +75,8 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
     try {
       // Use the legacy (non-ESM) build so production minifiers don't choke on the worker.
       const pdfjsLib = await import('pdfjs-dist');
-      // Use the emitted static worker file (see next.config.js) to avoid bundling/minification issues.
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+      // Use CDN worker URL to avoid bundling/minification issues in production
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;

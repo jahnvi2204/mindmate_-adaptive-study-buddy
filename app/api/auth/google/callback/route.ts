@@ -41,14 +41,19 @@ export async function GET(req: NextRequest) {
 
   const baseUrl = getBaseUrl(req);
 
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.error("Missing Google OAuth credentials");
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID ?? "",
-        client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri: `${baseUrl}/api/auth/google/callback`,
         grant_type: "authorization_code",
       }),
@@ -67,6 +72,12 @@ export async function GET(req: NextRequest) {
     }
 
     const profile = decodeIdToken(idToken);
+    const appSecret = process.env.APP_SECRET;
+    if (!appSecret || appSecret === "change-me") {
+      console.error("APP_SECRET not properly configured");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
     const sessionToken = jwt.sign(
       {
         sub: profile.sub,
@@ -74,7 +85,7 @@ export async function GET(req: NextRequest) {
         email: profile.email,
         picture: profile.picture,
       },
-      process.env.APP_SECRET ?? "change-me",
+      appSecret,
       { expiresIn: "7d" }
     );
 
