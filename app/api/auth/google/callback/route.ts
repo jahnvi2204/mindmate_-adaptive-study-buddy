@@ -35,8 +35,29 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get("state");
   const storedState = req.cookies.get("oauth_state")?.value;
 
-  if (!code || !state || state !== storedState) {
-    return NextResponse.json({ error: "Invalid state" }, { status: 400 });
+  // Better error messages for debugging
+  if (!code) {
+    console.error("OAuth callback missing 'code' parameter");
+    return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
+  }
+  if (!state) {
+    console.error("OAuth callback missing 'state' parameter");
+    return NextResponse.json({ error: "Missing state parameter" }, { status: 400 });
+  }
+  if (!storedState) {
+    console.error("OAuth state cookie not found. State from URL:", state);
+    console.error("All cookies:", req.cookies.getAll().map(c => c.name));
+    return NextResponse.json({ 
+      error: "State cookie not found. Please try logging in again.",
+      details: "The OAuth state cookie was not found. This may happen if cookies are blocked or the session expired."
+    }, { status: 400 });
+  }
+  if (state !== storedState) {
+    console.error("State mismatch. URL state:", state, "Cookie state:", storedState);
+    return NextResponse.json({ 
+      error: "Invalid state parameter",
+      details: "The OAuth state did not match. This may indicate a security issue or expired session."
+    }, { status: 400 });
   }
 
   const baseUrl = getBaseUrl(req);

@@ -5,9 +5,9 @@ const isProd = process.env.NODE_ENV === "production";
 const stateCookie = {
   httpOnly: true,
   sameSite: "none" as const, // send with OAuth redirect (cross-site)
-  secure: isProd,
+  secure: true, // Required for sameSite: "none" - always true in production
   path: "/",
-  maxAge: 600,
+  maxAge: 600, // 10 minutes
 };
 
 const getBaseUrl = (req: NextRequest) => {
