@@ -18,8 +18,10 @@ const getBaseUrl = (req: NextRequest) => {
 
 export async function GET(req: NextRequest) {
   if (!process.env.GOOGLE_CLIENT_ID) {
-    console.error("Missing GOOGLE_CLIENT_ID");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    console.error("Missing GOOGLE_CLIENT_ID environment variable");
+    return NextResponse.json({ 
+      error: "Server configuration error: GOOGLE_CLIENT_ID is not set" 
+    }, { status: 500 });
   }
 
   const state = crypto.randomUUID();

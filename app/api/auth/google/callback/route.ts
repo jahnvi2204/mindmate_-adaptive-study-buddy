@@ -41,9 +41,17 @@ export async function GET(req: NextRequest) {
 
   const baseUrl = getBaseUrl(req);
 
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    console.error("Missing Google OAuth credentials");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    console.error("Missing GOOGLE_CLIENT_ID environment variable");
+    return NextResponse.json({ 
+      error: "Server configuration error: GOOGLE_CLIENT_ID is not set" 
+    }, { status: 500 });
+  }
+  if (!process.env.GOOGLE_CLIENT_SECRET) {
+    console.error("Missing GOOGLE_CLIENT_SECRET environment variable");
+    return NextResponse.json({ 
+      error: "Server configuration error: GOOGLE_CLIENT_SECRET is not set" 
+    }, { status: 500 });
   }
 
   try {
@@ -73,9 +81,17 @@ export async function GET(req: NextRequest) {
 
     const profile = decodeIdToken(idToken);
     const appSecret = process.env.APP_SECRET;
-    if (!appSecret || appSecret === "change-me") {
-      console.error("APP_SECRET not properly configured");
-      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    if (!appSecret) {
+      console.error("Missing APP_SECRET environment variable");
+      return NextResponse.json({ 
+        error: "Server configuration error: APP_SECRET is not set" 
+      }, { status: 500 });
+    }
+    if (appSecret === "change-me") {
+      console.error("APP_SECRET is still set to default value 'change-me'");
+      return NextResponse.json({ 
+        error: "Server configuration error: APP_SECRET must be changed from default value" 
+      }, { status: 500 });
     }
 
     const sessionToken = jwt.sign(

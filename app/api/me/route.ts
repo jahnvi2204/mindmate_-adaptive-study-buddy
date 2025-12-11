@@ -6,9 +6,17 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const appSecret = process.env.APP_SECRET;
-  if (!appSecret || appSecret === "change-me") {
-    console.error("APP_SECRET not properly configured");
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  if (!appSecret) {
+    console.error("Missing APP_SECRET environment variable");
+    return NextResponse.json({ 
+      error: "Server configuration error: APP_SECRET is not set" 
+    }, { status: 500 });
+  }
+  if (appSecret === "change-me") {
+    console.error("APP_SECRET is still set to default value 'change-me'");
+    return NextResponse.json({ 
+      error: "Server configuration error: APP_SECRET must be changed from default value" 
+    }, { status: 500 });
   }
 
   try {
