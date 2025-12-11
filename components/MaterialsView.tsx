@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-// Use ?url so Next emits the worker as a static asset and we get its URL.
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// Let the custom webpack rule emit the worker as an asset and return its URL.
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import {
   Upload,
   FileText,
