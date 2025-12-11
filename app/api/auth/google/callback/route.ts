@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const isProd = process.env.NODE_ENV === "production";
 const sessionCookie = {
@@ -10,11 +11,27 @@ const sessionCookie = {
   maxAge: 7 * 24 * 60 * 60,
 };
 
-const stateCookie = {
-  httpOnly: true,
-  sameSite: "none" as const, // ensure cookie returns on OAuth redirect
-  secure: isProd,
-  path: "/",
+// Helper to verify signed state
+const verifySignedState = (signedState: string): string | null => {
+  try {
+    const appSecret = process.env.APP_SECRET;
+    if (!appSecret) return null;
+    
+    const [state, signature] = signedState.split('.');
+    if (!state || !signature) return null;
+    
+    const expectedSignature = crypto
+      .createHmac('sha256', appSecret)
+      .update(state)
+      .digest('hex');
+    
+    if (signature === expectedSignature) {
+      return state;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 };
 
 const getBaseUrl = (req: NextRequest) => {
@@ -32,7 +49,7 @@ const decodeIdToken = (idToken: string) => {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state");
+  const signedStateParam = searchParams.get("state");
   const storedState = req.cookies.get("oauth_state")?.value;
 
   // Better error messages for debugging
@@ -40,23 +57,40 @@ export async function GET(req: NextRequest) {
     console.error("OAuth callback missing 'code' parameter");
     return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
   }
-  if (!state) {
+  if (!signedStateParam) {
     console.error("OAuth callback missing 'state' parameter");
     return NextResponse.json({ error: "Missing state parameter" }, { status: 400 });
   }
-  if (!storedState) {
-    console.error("OAuth state cookie not found. State from URL:", state);
+
+  // Try to verify signed state first (fallback if cookies fail)
+  const verifiedState = verifySignedState(signedStateParam);
+  
+  // Validate state: prefer cookie if available, otherwise use verified signed state
+  let validState: string | null = null;
+  
+  if (storedState) {
+    // Cookie exists - verify it matches the signed state
+    if (verifiedState && verifiedState === storedState) {
+      validState = storedState;
+    } else {
+      console.error("State mismatch. Cookie state:", storedState, "Signed state:", verifiedState);
+      return NextResponse.json({ 
+        error: "Invalid state parameter",
+        details: "The OAuth state did not match. This may indicate a security issue."
+      }, { status: 400 });
+    }
+  } else if (verifiedState) {
+    // No cookie but signed state is valid - use it as fallback
+    console.warn("OAuth state cookie not found, using signed state verification");
+    validState = verifiedState;
+  } else {
+    // Neither cookie nor valid signed state
+    console.error("OAuth state cookie not found and signed state verification failed");
+    console.error("State from URL:", signedStateParam);
     console.error("All cookies:", req.cookies.getAll().map(c => c.name));
     return NextResponse.json({ 
       error: "State cookie not found. Please try logging in again.",
-      details: "The OAuth state cookie was not found. This may happen if cookies are blocked or the session expired."
-    }, { status: 400 });
-  }
-  if (state !== storedState) {
-    console.error("State mismatch. URL state:", state, "Cookie state:", storedState);
-    return NextResponse.json({ 
-      error: "Invalid state parameter",
-      details: "The OAuth state did not match. This may indicate a security issue or expired session."
+      details: "The OAuth state cookie was not found and state verification failed. This may happen if cookies are blocked or the session expired."
     }, { status: 400 });
   }
 

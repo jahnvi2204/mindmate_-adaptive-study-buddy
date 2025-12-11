@@ -10,6 +10,16 @@ const stateCookie = {
   maxAge: 600, // 10 minutes
 };
 
+// Helper to create signed state (fallback if cookies fail)
+const createSignedState = (state: string): string => {
+  const appSecret = process.env.APP_SECRET || "fallback-secret";
+  const signature = crypto
+    .createHmac('sha256', appSecret)
+    .update(state)
+    .digest('hex');
+  return `${state}.${signature}`;
+};
+
 const getBaseUrl = (req: NextRequest) => {
   // Always derive from the incoming request to avoid cross-domain cookie issues.
   const url = new URL(req.url);
@@ -26,6 +36,9 @@ export async function GET(req: NextRequest) {
 
   const state = crypto.randomUUID();
   const baseUrl = getBaseUrl(req);
+  
+  // Create signed state as fallback (in case cookies are blocked)
+  const signedState = createSignedState(state);
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
@@ -34,13 +47,14 @@ export async function GET(req: NextRequest) {
     scope: "openid profile email",
     access_type: "offline",
     prompt: "consent",
-    state,
+    state: signedState, // Use signed state instead of plain state
   });
 
   const res = NextResponse.redirect(
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
   );
 
+  // Still set cookie as primary method
   res.cookies.set("oauth_state", state, stateCookie);
   return res;
 }
