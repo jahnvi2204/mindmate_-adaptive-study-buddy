@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-// Let the custom webpack rule emit the worker as an asset and return its URL.
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs';
+// Use the legacy worker (non-ESM) and emit it as a static asset to avoid Terser ESM parsing.
+import workerSrc from 'pdfjs-dist/legacy/build/pdf.worker.min.js?url';
 import {
   Upload,
   FileText,
