@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef } from 'react';
 // Use ?url so Next emits the worker as a static asset and we get its URL.
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
