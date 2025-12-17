@@ -12,7 +12,13 @@ const stateCookie = {
 
 // Helper to create signed state (fallback if cookies fail)
 const createSignedState = (state: string): string => {
-  const appSecret = process.env.APP_SECRET || "fallback-secret";
+  const appSecret = process.env.APP_SECRET;
+  if (!appSecret || appSecret === "change-me") {
+    // Can't sign without proper secret - this should be caught earlier but fail gracefully
+    console.error("APP_SECRET not properly configured for state signing");
+    // Return unsigned state as fallback (will fail verification but at least won't crash)
+    return state;
+  }
   const signature = crypto
     .createHmac('sha256', appSecret)
     .update(state)
@@ -35,6 +41,15 @@ export async function GET(req: NextRequest) {
     console.error("Missing GOOGLE_CLIENT_ID environment variable");
     return NextResponse.json({ 
       error: "Server configuration error: GOOGLE_CLIENT_ID is not set" 
+    }, { status: 500 });
+  }
+
+  // Check APP_SECRET early
+  const appSecret = process.env.APP_SECRET;
+  if (!appSecret || appSecret === "change-me") {
+    console.error("APP_SECRET not properly configured");
+    return NextResponse.json({ 
+      error: "Server configuration error: APP_SECRET is not set or using default value" 
     }, { status: 500 });
   }
 

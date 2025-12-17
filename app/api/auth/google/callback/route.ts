@@ -40,7 +40,13 @@ const verifySignedState = (signedState: string): string | null => {
     if (signature === expectedSignature) {
       return state;
     } else {
-      console.error("Signature mismatch in state verification");
+      console.error("Signature mismatch in state verification", {
+        receivedSignature: signature.substring(0, 16) + "...",
+        expectedSignature: expectedSignature.substring(0, 16) + "...",
+        stateLength: state.length,
+        appSecretSet: !!appSecret,
+        appSecretLength: appSecret?.length || 0
+      });
       return null;
     }
   } catch (err) {
