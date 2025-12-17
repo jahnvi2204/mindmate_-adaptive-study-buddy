@@ -21,7 +21,11 @@ const createSignedState = (state: string): string => {
 };
 
 const getBaseUrl = (req: NextRequest) => {
-  // Always derive from the incoming request to avoid cross-domain cookie issues.
+  // Use NEXT_PUBLIC_BASE_URL if set (for consistent redirect URIs)
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, ''); // Remove trailing slash
+  }
+  // Otherwise derive from the incoming request
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 };
@@ -36,13 +40,17 @@ export async function GET(req: NextRequest) {
 
   const state = crypto.randomUUID();
   const baseUrl = getBaseUrl(req);
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  
+  // Log the redirect URI for debugging
+  console.log("OAuth redirect URI:", redirectUri);
   
   // Create signed state as fallback (in case cookies are blocked)
   const signedState = createSignedState(state);
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: `${baseUrl}/api/auth/google/callback`,
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: "openid profile email",
     access_type: "offline",

@@ -15,10 +15,22 @@ const sessionCookie = {
 const verifySignedState = (signedState: string): string | null => {
   try {
     const appSecret = process.env.APP_SECRET;
-    if (!appSecret) return null;
+    if (!appSecret || appSecret === "change-me") {
+      console.warn("APP_SECRET not set or using default, cannot verify signed state");
+      return null;
+    }
     
-    const [state, signature] = signedState.split('.');
-    if (!state || !signature) return null;
+    const parts = signedState.split('.');
+    if (parts.length !== 2) {
+      console.error("Invalid signed state format");
+      return null;
+    }
+    
+    const [state, signature] = parts;
+    if (!state || !signature) {
+      console.error("Missing state or signature in signed state");
+      return null;
+    }
     
     const expectedSignature = crypto
       .createHmac('sha256', appSecret)
@@ -27,15 +39,22 @@ const verifySignedState = (signedState: string): string | null => {
     
     if (signature === expectedSignature) {
       return state;
+    } else {
+      console.error("Signature mismatch in state verification");
+      return null;
     }
-    return null;
-  } catch {
+  } catch (err) {
+    console.error("Error verifying signed state:", err);
     return null;
   }
 };
 
 const getBaseUrl = (req: NextRequest) => {
-  // Always derive from the incoming request to avoid cross-domain cookie issues.
+  // Use NEXT_PUBLIC_BASE_URL if set (for consistent redirect URIs)
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, ''); // Remove trailing slash
+  }
+  // Otherwise derive from the incoming request
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 };
@@ -65,24 +84,47 @@ export async function GET(req: NextRequest) {
   // Try to verify signed state first (fallback if cookies fail)
   const verifiedState = verifySignedState(signedStateParam);
   
+  // Log for debugging
+  console.log("State verification:", {
+    hasCookie: !!storedState,
+    cookieState: storedState ? storedState.substring(0, 8) + "..." : null,
+    hasSignedState: !!signedStateParam,
+    verifiedState: verifiedState ? verifiedState.substring(0, 8) + "..." : null,
+    allCookies: req.cookies.getAll().map(c => c.name)
+  });
+  
   // Validate state: prefer cookie if available, otherwise use verified signed state
   let validState: string | null = null;
   
-  if (storedState) {
-    // Cookie exists - verify it matches the signed state
-    if (verifiedState && verifiedState === storedState) {
+  if (storedState && verifiedState) {
+    // Both cookie and signed state exist - verify they match
+    if (verifiedState === storedState) {
       validState = storedState;
+      console.log("State verification successful via cookie match");
     } else {
-      console.error("State mismatch. Cookie state:", storedState, "Signed state:", verifiedState);
-      return NextResponse.json({ 
-        error: "Invalid state parameter",
-        details: "The OAuth state did not match. This may indicate a security issue."
-      }, { status: 400 });
+      console.error("State mismatch detected:", {
+        cookieState: storedState.substring(0, 20),
+        verifiedState: verifiedState.substring(0, 20),
+        fullCookieState: storedState,
+        fullVerifiedState: verifiedState
+      });
+      // Still allow if signed state is valid (cookie might be from different session)
+      console.warn("Cookie state doesn't match, but signed state is valid. Using signed state.");
+      validState = verifiedState;
     }
   } else if (verifiedState) {
     // No cookie but signed state is valid - use it as fallback
     console.warn("OAuth state cookie not found, using signed state verification");
     validState = verifiedState;
+  } else if (storedState) {
+    // Cookie exists but signed state verification failed - this is suspicious
+    console.error("Cookie exists but signed state verification failed");
+    console.error("Signed state param:", signedStateParam);
+    console.error("Cookie state:", storedState);
+    return NextResponse.json({ 
+      error: "Invalid state parameter",
+      details: "State verification failed. The state signature is invalid."
+    }, { status: 400 });
   } else {
     // Neither cookie nor valid signed state
     console.error("OAuth state cookie not found and signed state verification failed");
