@@ -2,7 +2,8 @@
   "/_not-found/page": "app/_not-found/page.js",
   "/api/auth/google/callback/route": "app/api/auth/google/callback/route.js",
   "/api/auth/google/route": "app/api/auth/google/route.js",
-  "/api/auth/logout/route": "app/api/auth/logout/route.js",
   "/api/me/route": "app/api/me/route.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/api/auth/logout/route": "app/api/auth/logout/route.js",
+  "/auth/google/route": "app/auth/google/route.js"
 }
