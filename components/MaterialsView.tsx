@@ -80,7 +80,7 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
       // With the custom webpack rule in next.config.js, this import is treated as an
       // asset/resource and returns the URL string to the worker file.
       const workerModule: any = await import(
-        'pdfjs-dist/legacy/build/pdf.worker.min.js'
+        'pdfjs-dist/legacy/build/pdf.worker.min.mjs'
       );
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         workerModule.default ?? workerModule;
