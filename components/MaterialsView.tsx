@@ -74,9 +74,13 @@ const MaterialsView: React.FC<MaterialsViewProps> = ({
 
     try {
       // Use the legacy (non-ESM) build so production minifiers don't choke on the worker.
-      const pdfjsLib = await import('pdfjs-dist');
-      // Use CDN worker URL to avoid bundling/minification issues in production
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      const pdfjsLib: any = await import('pdfjs-dist');
+
+      // Load the pdf.js worker from the locally-bundled asset instead of a CDN.
+      // This avoids 404s / CSP issues in production and works with the custom webpack rule in next.config.js.
+      const workerModule: any = await import('pdfjs-dist/build/pdf.worker.min.mjs');
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        workerModule.default ?? workerModule;
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
